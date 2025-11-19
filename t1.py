@@ -2303,16 +2303,10 @@ def calculate_highlow_multiplier(current_card: int, deck: list, bet_type: str) -
         # Count cards with rank higher than current
         higher_cards = sum(count for rank, count in rank_counts.items() if rank > current_card)
         probability = higher_cards / total_remaining if total_remaining > 0 else 0
-        # Exception: For King (13), set multiplier to 1.02x since there are no higher cards
-        if current_card == 13:
-            return 1.02
     elif bet_type == "low":
         # Count cards with rank lower than current
         lower_cards = sum(count for rank, count in rank_counts.items() if rank < current_card)
         probability = lower_cards / total_remaining if total_remaining > 0 else 0
-        # Exception: For Ace (1), set multiplier to 1.02x since there are no lower cards
-        if current_card == 1:
-            return 1.02
     elif bet_type == "tie":
         # Count cards with same rank as current
         same_cards = rank_counts.get(current_card, 0)
@@ -2322,7 +2316,7 @@ def calculate_highlow_multiplier(current_card: int, deck: list, bet_type: str) -
     
     # Avoid division by zero
     if probability <= 0:
-        return 1.02  # Return minimum multiplier instead of 0
+        return 0  # Can't win, no multiplier
     
     # Calculate multiplier with 2% house edge
     multiplier = 0.98 / probability
@@ -2401,21 +2395,40 @@ async def highlow_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     low_mult = calculate_highlow_multiplier(current_card, deck, "low")
     tie_mult = calculate_highlow_multiplier(current_card, deck, "tie")
     
+    # Build keyboard - conditionally show buttons based on card
+    buttons = []
+    
+    # Add Higher button only if not King (13)
+    if current_card != 13:
+        buttons.append(InlineKeyboardButton(f"⬆️ Higher ({high_mult:.2f}x)", callback_data=f"hl_pick_{game_id}_high"))
+    
+    # Add Lower button only if not Ace (1)
+    if current_card != 1:
+        buttons.append(InlineKeyboardButton(f"⬇️ Lower ({low_mult:.2f}x)", callback_data=f"hl_pick_{game_id}_low"))
+    
+    # Always add Tie button
+    buttons.append(InlineKeyboardButton(f"🔄 Tie ({tie_mult:.2f}x)", callback_data=f"hl_pick_{game_id}_tie"))
+    
+    # Create keyboard with buttons in a single row, and skip button below
     keyboard = [
-        [InlineKeyboardButton(f"⬆️ Higher ({high_mult:.2f}x)", callback_data=f"hl_pick_{game_id}_high"),
-         InlineKeyboardButton(f"⬇️ Lower ({low_mult:.2f}x)", callback_data=f"hl_pick_{game_id}_low"),
-         InlineKeyboardButton(f"🔄 Tie ({tie_mult:.2f}x)", callback_data=f"hl_pick_{game_id}_tie")]
+        buttons,
+        [InlineKeyboardButton("⏭️ Skip Card", callback_data=f"hl_skip_{game_id}")]
     ]
+    
+    # Build multiplier text
+    mult_text = "Choose your prediction:\n"
+    if current_card != 13:
+        mult_text += f"⬆️ Higher: {high_mult:.2f}x\n"
+    if current_card != 1:
+        mult_text += f"⬇️ Lower: {low_mult:.2f}x\n"
+    mult_text += f"🔄 Tie: {tie_mult:.2f}x"
     
     await update.message.reply_text(
         f"🎴 <b>High-Low Game Started!</b> (ID: <code>{game_id}</code>)\n\n"
         f"💰 Bet: ${bet:.2f}\n"
         f"🃏 Current Card: <b>{card_name}</b>\n"
         f"📊 Cards remaining: {len(deck)}\n\n"
-        f"Choose your prediction:\n"
-        f"⬆️ Higher: {high_mult:.2f}x\n"
-        f"⬇️ Lower: {low_mult:.2f}x\n"
-        f"🔄 Tie: {tie_mult:.2f}x",
+        f"{mult_text}",
         parse_mode=ParseMode.HTML,
         reply_markup=InlineKeyboardMarkup(keyboard)
     )
@@ -2460,6 +2473,60 @@ async def highlow_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await query.edit_message_text("This game is already finished.")
         return
     
+    if action == "skip":
+        # Skip the current card and draw a new one
+        if not game["deck"]:
+            await query.answer("No more cards to skip!", show_alert=True)
+            return
+        
+        # Draw new card
+        new_card = game["deck"].pop()
+        game["current_card"] = new_card
+        
+        card_name = get_card_name(new_card)
+        win_amount = game["bet_amount"] * game["current_multiplier"]
+        
+        # Calculate new multipliers for the new card
+        high_mult = calculate_highlow_multiplier(new_card, game["deck"], "high")
+        low_mult = calculate_highlow_multiplier(new_card, game["deck"], "low")
+        tie_mult = calculate_highlow_multiplier(new_card, game["deck"], "tie")
+        
+        # Build keyboard - conditionally show buttons based on card
+        buttons = []
+        if new_card != 13:
+            buttons.append(InlineKeyboardButton(f"⬆️ Higher ({high_mult:.2f}x)", callback_data=f"hl_pick_{game_id}_high"))
+        if new_card != 1:
+            buttons.append(InlineKeyboardButton(f"⬇️ Lower ({low_mult:.2f}x)", callback_data=f"hl_pick_{game_id}_low"))
+        buttons.append(InlineKeyboardButton(f"🔄 Tie ({tie_mult:.2f}x)", callback_data=f"hl_pick_{game_id}_tie"))
+        
+        keyboard = [
+            buttons,
+            [InlineKeyboardButton("⏭️ Skip Card", callback_data=f"hl_skip_{game_id}")],
+            [InlineKeyboardButton(f"💸 Cash Out (${win_amount:.2f})", callback_data=f"hl_cashout_{game_id}")]
+        ]
+        
+        # Build multiplier text
+        mult_text = "Next multipliers:\n"
+        if new_card != 13:
+            mult_text += f"⬆️ Higher: {high_mult:.2f}x\n"
+        if new_card != 1:
+            mult_text += f"⬇️ Lower: {low_mult:.2f}x\n"
+        mult_text += f"🔄 Tie: {tie_mult:.2f}x"
+        
+        await query.edit_message_text(
+            f"⏭️ <b>Card Skipped!</b>\n\n"
+            f"🃏 New Current Card: <b>{card_name}</b>\n"
+            f"💰 Current Win: <b>${win_amount:.2f}</b>\n"
+            f"🔥 Streak: {game['streak']}\n"
+            f"📈 Current Multiplier: {game['current_multiplier']:.2f}x\n"
+            f"📊 Cards remaining: {len(game['deck'])}\n\n"
+            f"{mult_text}\n\n"
+            f"Continue playing or cash out?\nID: <code>{game_id}</code>",
+            parse_mode=ParseMode.HTML,
+            reply_markup=InlineKeyboardMarkup(keyboard)
+        )
+        return
+    
     if action == "pick":
         choice = parts[3]  # high, low, or tie
         current_card = game["current_card"]
@@ -2497,12 +2564,27 @@ async def highlow_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 low_mult = calculate_highlow_multiplier(next_card, game["deck"], "low")
                 tie_mult = calculate_highlow_multiplier(next_card, game["deck"], "tie")
                 
+                # Build keyboard - conditionally show buttons based on card
+                buttons = []
+                if next_card != 13:
+                    buttons.append(InlineKeyboardButton(f"⬆️ Higher ({high_mult:.2f}x)", callback_data=f"hl_pick_{game_id}_high"))
+                if next_card != 1:
+                    buttons.append(InlineKeyboardButton(f"⬇️ Lower ({low_mult:.2f}x)", callback_data=f"hl_pick_{game_id}_low"))
+                buttons.append(InlineKeyboardButton(f"🔄 Tie ({tie_mult:.2f}x)", callback_data=f"hl_pick_{game_id}_tie"))
+                
                 keyboard = [
-                    [InlineKeyboardButton(f"⬆️ Higher ({high_mult:.2f}x)", callback_data=f"hl_pick_{game_id}_high"),
-                     InlineKeyboardButton(f"⬇️ Lower ({low_mult:.2f}x)", callback_data=f"hl_pick_{game_id}_low"),
-                     InlineKeyboardButton(f"🔄 Tie ({tie_mult:.2f}x)", callback_data=f"hl_pick_{game_id}_tie")],
+                    buttons,
+                    [InlineKeyboardButton("⏭️ Skip Card", callback_data=f"hl_skip_{game_id}")],
                     [InlineKeyboardButton(f"💸 Cash Out (${win_amount:.2f})", callback_data=f"hl_cashout_{game_id}")]
                 ]
+                
+                # Build multiplier text
+                mult_text = "Next multipliers:\n"
+                if next_card != 13:
+                    mult_text += f"⬆️ Higher: {high_mult:.2f}x\n"
+                if next_card != 1:
+                    mult_text += f"⬇️ Lower: {low_mult:.2f}x\n"
+                mult_text += f"🔄 Tie: {tie_mult:.2f}x"
                 
                 await query.edit_message_text(
                     f"🎉 <b>Correct!</b> The next card is {card_name}!\n\n"
@@ -2511,10 +2593,7 @@ async def highlow_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
                     f"🔥 Streak: {game['streak']}\n"
                     f"📈 Current Total Multiplier: {game['current_multiplier']:.2f}x\n"
                     f"📊 Cards remaining: {len(game['deck'])}\n\n"
-                    f"Next multipliers:\n"
-                    f"⬆️ Higher: {high_mult:.2f}x\n"
-                    f"⬇️ Lower: {low_mult:.2f}x\n"
-                    f"🔄 Tie: {tie_mult:.2f}x\n\n"
+                    f"{mult_text}\n\n"
                     f"Continue playing or cash out?\nID: <code>{game_id}</code>",
                     parse_mode=ParseMode.HTML,
                     reply_markup=InlineKeyboardMarkup(keyboard)
@@ -6715,7 +6794,7 @@ async def escrow_command(update: Update, context: ContextTypes.DEFAULT_TYPE, fro
     context.user_data['escrow_step'] = 'ask_amount'
     context.user_data['escrow_data'] = {'creator_id': user.id, 'creator_username': user.username}
     text = "🛡️ <b>New Escrow Deal</b>\n\nPlease enter the deal amount in USDT (BEP20)."
-    keyboard = [[InlineKeyboardButton("Cancel", callback_data="escrow_action_cancel_setup")]]
+    keyboard = [[InlineKeyboardButton("❌ Cancel", callback_data="escrow_action_cancel_setup")]]
     if from_callback:
         await update.callback_query.edit_message_text(text, parse_mode=ParseMode.HTML, reply_markup=InlineKeyboardMarkup(keyboard))
     else:
@@ -6734,11 +6813,14 @@ async def handle_escrow_conversation(update: Update, context: ContextTypes.DEFAU
             if amount <= 0: raise ValueError
             deal_data['amount'] = amount
             context.user_data['escrow_step'] = 'ask_role'
-            keyboard = [[InlineKeyboardButton("I am the Seller", callback_data="escrow_role_seller"), InlineKeyboardButton("I am the Buyer", callback_data="escrow_role_buyer")],
-                        [InlineKeyboardButton("Cancel", callback_data="escrow_action_cancel_setup")]]
-            await update.message.reply_text(f"Amount set to ${amount:.2f} USDT.\nPlease select your role:", reply_markup=InlineKeyboardMarkup(keyboard))
+            keyboard = [
+                [InlineKeyboardButton("🏪 I am the Seller", callback_data="escrow_role_seller")],
+                [InlineKeyboardButton("🛒 I am the Buyer", callback_data="escrow_role_buyer")],
+                [InlineKeyboardButton("❌ Cancel", callback_data="escrow_action_cancel_setup")]
+            ]
+            await update.message.reply_text(f"✅ Amount set to ${amount:.2f} USDT.\n\nPlease select your role:", parse_mode=ParseMode.HTML, reply_markup=InlineKeyboardMarkup(keyboard))
         except (ValueError, TypeError):
-            await update.message.reply_text("Invalid amount. Please enter a positive number.", reply_markup=InlineKeyboardMarkup(cancel_button))
+            await update.message.reply_text("❌ Invalid amount. Please enter a positive number.", reply_markup=InlineKeyboardMarkup(cancel_button))
             return
 
     elif step == 'ask_details':
@@ -6769,8 +6851,8 @@ async def escrow_callback_handler(update: Update, context: ContextTypes.DEFAULT_
         context.user_data['escrow_data']['creator_role'] = role
         context.user_data['escrow_data']['partner_role'] = 'Buyer' if role == 'seller' else 'Seller'
         context.user_data['escrow_step'] = 'ask_details'
-        cancel_button = [[InlineKeyboardButton("Cancel", callback_data="escrow_action_cancel_setup")]]
-        await query.edit_message_text("Role selected. Now, please provide the deal details (e.g., 'Sale of item X').", reply_markup=InlineKeyboardMarkup(cancel_button))
+        cancel_button = [[InlineKeyboardButton("❌ Cancel", callback_data="escrow_action_cancel_setup")]]
+        await query.edit_message_text("✅ Role selected. Now, please provide the deal details (e.g., 'Sale of item X').", reply_markup=InlineKeyboardMarkup(cancel_button))
 
     # REMOVED: partner action, as we now force link creation.
 
@@ -6812,8 +6894,11 @@ async def escrow_callback_handler(update: Update, context: ContextTypes.DEFAULT_
         if decision == 'release':
             if user.id != deal['seller']['id']: await query.answer("Only the seller can release funds.", show_alert=True); return
             if deal['status'] != 'funds_secured': await query.answer("Funds are not in a releasable state.", show_alert=True); return
-            keyboard = [[InlineKeyboardButton("✅ Yes, Release Funds", callback_data=f"escrow_action_{deal_id}_releaseconfirm"), InlineKeyboardButton("❌ No, Cancel", callback_data=f"escrow_action_{deal_id}_releasecancel")]]
-            await query.edit_message_text("Are you sure you want to release the funds to the buyer? This is irreversible.", reply_markup=InlineKeyboardMarkup(keyboard))
+            keyboard = [
+                [InlineKeyboardButton("✅ Yes, Release Funds", callback_data=f"escrow_action_{deal_id}_releaseconfirm")],
+                [InlineKeyboardButton("❌ No, Cancel", callback_data=f"escrow_action_{deal_id}_releasecancel")]
+            ]
+            await query.edit_message_text("⚠️ Are you sure you want to release the funds to the buyer? This action is irreversible.", parse_mode=ParseMode.HTML, reply_markup=InlineKeyboardMarkup(keyboard))
         elif decision == 'releaseconfirm':
             if user.id != deal['seller']['id']: return
             await query.edit_message_text("Action confirmed. Asking buyer for their withdrawal address.")
@@ -6915,8 +7000,14 @@ async def monitor_escrow_deposit(context: ContextTypes.DEFAULT_TYPE):
                         buyer_msg = (f"✅ The seller has deposited ${tx_amount_usdt:.2f} USDT for deal <code>{deal_id}</code>. The funds are now secured by the bot.\n\n"
                                      f"Please proceed with the transaction. Let the seller know once you have received the goods/services as agreed.")
 
-                        keyboard_seller = [[InlineKeyboardButton("✅ Release Funds to Buyer", callback_data=f"escrow_action_{deal_id}_release"), InlineKeyboardButton("🚨 Open Dispute", callback_data=f"escrow_action_{deal_id}_dispute")]]
-                        keyboard_buyer = [[InlineKeyboardButton("🚨 Open Dispute", callback_data=f"escrow_action_{deal_id}_dispute")]]
+                        # Enhanced attractive buttons
+                        keyboard_seller = [
+                            [InlineKeyboardButton("✅ Release Funds to Buyer", callback_data=f"escrow_action_{deal_id}_release")],
+                            [InlineKeyboardButton("🚨 Open Dispute", callback_data=f"escrow_action_{deal_id}_dispute")]
+                        ]
+                        keyboard_buyer = [
+                            [InlineKeyboardButton("🚨 Open Dispute", callback_data=f"escrow_action_{deal_id}_dispute")]
+                        ]
 
                         await context.bot.send_message(seller_id, seller_msg, parse_mode=ParseMode.HTML, reply_markup=InlineKeyboardMarkup(keyboard_seller))
                         await context.bot.send_message(buyer_id, buyer_msg, parse_mode=ParseMode.HTML, reply_markup=InlineKeyboardMarkup(keyboard_buyer))
@@ -6955,6 +7046,72 @@ async def release_escrow_funds(update: Update, context: ContextTypes.DEFAULT_TYP
         fail_msg = f"🚨 An error occurred releasing funds for deal {deal_id}. Contact @jashanxjagy immediately."
         await context.bot.send_message(deal['seller']['id'], fail_msg); await context.bot.send_message(deal['buyer']['id'], fail_msg)
         await context.bot.send_message(BOT_OWNER_ID, f"FATAL ERROR releasing funds for deal {deal_id}: {e}")
+
+@check_maintenance
+async def escrow_add_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Owner-only command to manually mark escrow deposit as received"""
+    user = update.effective_user
+    
+    # Check if user is owner
+    if user.id != BOT_OWNER_ID:
+        await update.message.reply_text("This command is only available to the bot owner.")
+        return
+    
+    # Check if escrow_id is provided
+    if not context.args or len(context.args) != 1:
+        await update.message.reply_text("Usage: /add <escrow_id>\n\nExample: /add ESC_ABC123")
+        return
+    
+    deal_id = context.args[0]
+    deal = escrow_deals.get(deal_id)
+    
+    if not deal:
+        await update.message.reply_text(f"❌ Escrow deal {deal_id} not found.")
+        return
+    
+    if deal['status'] != 'accepted_awaiting_deposit':
+        await update.message.reply_text(f"❌ Deal {deal_id} is not awaiting deposit. Current status: {deal['status']}")
+        return
+    
+    # Mark deposit as received
+    deal['status'] = 'funds_secured'
+    deal['deposit_tx_hash'] = 'MANUAL_CONFIRMATION_BY_OWNER'
+    save_escrow_deal(deal_id)
+    
+    # Notify both parties
+    seller_id = deal['seller']['id']
+    buyer_id = deal['buyer']['id']
+    
+    seller_msg = (f"✅ Deposit for deal <code>{deal_id}</code> has been confirmed by @jashanxjagy. Funds are secured.\n\n"
+                  f"Amount: ${deal['amount']:.2f} USDT\n\n"
+                  f"You may now proceed with the buyer. Once they confirm receipt, use the button below to release the funds to them.")
+    
+    buyer_msg = (f"✅ The seller's deposit for deal <code>{deal_id}</code> has been confirmed by @jashanxjagy.\n\n"
+                 f"Amount: ${deal['amount']:.2f} USDT\n\n"
+                 f"The funds are now secured by the bot. Please proceed with the transaction. Let the seller know once you have received the goods/services as agreed.")
+    
+    # Create enhanced buttons with better styling
+    keyboard_seller = [
+        [InlineKeyboardButton("✅ Release Funds to Buyer", callback_data=f"escrow_action_{deal_id}_release")],
+        [InlineKeyboardButton("🚨 Open Dispute", callback_data=f"escrow_action_{deal_id}_dispute")]
+    ]
+    
+    keyboard_buyer = [
+        [InlineKeyboardButton("🚨 Open Dispute", callback_data=f"escrow_action_{deal_id}_dispute")]
+    ]
+    
+    await context.bot.send_message(seller_id, seller_msg, parse_mode=ParseMode.HTML, reply_markup=InlineKeyboardMarkup(keyboard_seller))
+    await context.bot.send_message(buyer_id, buyer_msg, parse_mode=ParseMode.HTML, reply_markup=InlineKeyboardMarkup(keyboard_buyer))
+    
+    # Confirm to owner
+    await update.message.reply_text(
+        f"✅ Deposit for deal <code>{deal_id}</code> has been manually confirmed.\n\n"
+        f"Amount: ${deal['amount']:.2f} USDT\n"
+        f"Seller: {deal['seller']['username']} (ID: {seller_id})\n"
+        f"Buyer: {deal['buyer']['username']} (ID: {buyer_id})\n\n"
+        f"Both parties have been notified.",
+        parse_mode=ParseMode.HTML
+    )
 
 ## NEW FEATURES ##
 @check_maintenance
@@ -9239,6 +9396,7 @@ def main():
     app.add_handler(CommandHandler("lb", limbo_command)); app.add_handler(CommandHandler("limbo", limbo_command)); app.add_handler(CommandHandler("Limbo", limbo_command)); app.add_handler(CommandHandler("keno", keno_command))
     app.add_handler(CommandHandler("hl", highlow_command))  # NEW: High-Low game
     app.add_handler(CommandHandler(["escrow", "esc"], escrow_command))
+    app.add_handler(CommandHandler("add", escrow_add_command))  # Owner-only: manually confirm escrow deposit
     app.add_handler(CommandHandler(["matches", "hc"], matches_command));
     app.add_handler(CommandHandler(["deals", "he"], deals_command))
     app.add_handler(CommandHandler("info", info_command))
