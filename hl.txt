@@ -1,0 +1,69 @@
+
+### High Low Card Game Payout Multipliers and Formula Explanation for AI
+
+You are tasked with implementing the payout multiplier system for a High Low card game with a standard 52-card deck (ranks 2 through Ace). The game allows players to bet whether the next card drawn will be higher, lower, or equal (tie/snap) compared to the current card.
+
+#### Key Points:
+- The deck has 52 cards, 13 ranks (2 to Ace), 4 suits.
+- After each card is drawn, the remaining cards reduce accordingly.
+- House edge is fixed at 2%, meaning 98% RTP on average.
+
+#### Step 1: Calculate Probability of Winning
+
+For each type of bet, calculate the probability that the next card satisfies the condition:
+
+1. **"Higher" Bet:**  
+   Probability is the number of remaining cards with rank higher than the current card divided by the number of remaining cards.  
+   \[
+   P(	ext{Higher}) = rac{	ext{Count of remaining cards with rank} > R}{	ext{Total remaining cards}}
+   \]
+
+2. **"Lower" Bet:**  
+   Probability is the number of remaining cards with rank lower than the current card divided by the number of remaining cards.  
+   \[
+   P(	ext{Lower}) = rac{	ext{Count of remaining cards with rank} < R}{	ext{Total remaining cards}}
+   \]
+
+3. **"Tie" (Snap) Bet:**  
+   Probability is the number of remaining cards with the same rank as the current card divided by the number of remaining cards.  
+   \[
+   P(	ext{Tie}) = rac{	ext{Count of remaining cards with rank} = R}{	ext{Total remaining cards}}
+   \]
+
+#### Step 2: Calculate Multiplier
+
+The payout multiplier for each bet type is the inverse of probability multiplied by (1 - house edge):
+
+\[
+	ext{Multiplier} = rac{1 - 0.02}{P(	ext{Bet})} = rac{0.98}{P(	ext{Bet})}
+\]
+
+For example, if the probability is 25% (0.25), then:
+
+\[
+	ext{Multiplier} = rac{0.98}{0.25} = 3.92
+\]
+
+This means the player wins 3.92 times the bet amount on a correct prediction.
+
+#### Step 3: Implement Logic for Dynamic Multipliers
+
+- After each card drawn, update the deck counts.
+- Recompute probabilities based on current deck state.
+- Calculate multipliers using the formula above.
+- Present multipliers in the game's UI reflecting the risk vs reward.
+
+#### Step 4: Example Multiplier Table (for full deck, starting condition)
+
+| Current Card Rank | Prob(Higher) | Multiplier (Higher) | Prob(Lower) | Multiplier (Lower) | Prob(Tie) | Multiplier (Tie) |
+|-------------------|--------------|---------------------|-------------|--------------------|-----------|------------------|
+| 2                 | 0.769        | 1.27                | 0.0         | NA                 | 0.231     | 4.24             |
+| 3                 | 0.692        | 1.42                | 0.07        | 13.62              | 0.231     | 4.24             |
+| ...               | ...          | ...                 | ...         | ...                | ...       | ...              |
+| Ace (14)          | 0.0          | NA                  | 0.923       | 1.06               | 0.077     | 12.73            |
+
+(Note: Probabilities assume initial full deck; these will dynamically update in gameplay.)
+
+---
+
+
