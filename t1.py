@@ -297,13 +297,13 @@ ROULETTE_CONFIG = {
 # Tower game multiplier chart (4 columns, varying bombs per row)
 TOWER_MULTIPLIERS = {
     1: {  # 1 bomb per row
-        1: 1.33, 2: 1.78, 3: 2.37, 4: 3.16, 5: 4.21, 6: 5.61
+        1: 1.3, 2: 1.74, 3: 2.32, 4: 3.1, 5: 4.13, 6: 5.5
     },
     2: {  # 2 bombs per row
-        1: 2.00, 2: 4.00, 3: 8.00, 4: 16.00, 5: 32.00, 6: 64.00
+        1: 1.96, 2: 3.92, 3: 7.84, 4: 15.68, 5: 31.36, 6: 62.72
     },
     3: {  # 3 bombs per row
-        1: 4.00, 2: 16.00, 3: 64.00, 4: 256.00, 5: 1024.00, 6: 4096.00
+        1: 3.92, 2: 15.68, 3: 62.72, 4: 250.88, 5: 1003.52, 6: 4014.08
     }
 }
 
@@ -314,55 +314,56 @@ CARD_VALUES = {
 SUITS = ['♠', '♥', '♦', '♣']
 RANKS = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K']
 
-# --- MINES MULTIPLIER CHART ---
+# --- MINES MULTIPLIER CHART (2% house edge applied) ---
 MINES_MULT_TABLE = {
     # 1 Bomb
-    1: {1: 1.03, 2: 1.08, 3: 1.12, 4: 1.18, 5: 1.24, 6: 1.30, 7: 1.37, 8: 1.46, 9: 1.55, 10: 1.65, 11: 1.77, 12: 1.90, 13: 2.06, 14: 2.25, 15: 2.47, 16: 2.75, 17: 3.09, 18: 3.54, 19: 4.12, 20: 4.95, 21: 6.19, 22: 8.25, 23: 12.37, 24: 24.75},
+    1: {1: 1.01, 2: 1.06, 3: 1.1, 4: 1.16, 5: 1.22, 6: 1.27, 7: 1.34, 8: 1.43, 9: 1.52, 10: 1.62, 11: 1.73, 12: 1.86, 13: 2.02, 14: 2.21, 15: 2.42, 16: 2.69, 17: 3.03, 18: 3.47, 19: 4.04, 20: 4.85, 21: 6.07, 22: 8.08, 23: 12.12, 24: 24.25},
     # 2 Bombs
-    2: {1: 1.08, 2: 1.17, 3: 1.29, 4: 1.41, 5: 1.56, 6: 1.74, 7: 1.94, 8: 2.18, 9: 2.47, 10: 2.83, 11: 3.26, 12: 3.81, 13: 4.50, 14: 5.40, 15: 6.60, 16: 8.25, 17: 10.61, 18: 14.14, 19: 19.80, 20: 29.70, 21: 49.50, 22: 99.0, 23: 297.0},
-    # Continue with existing multiplier table...
-    3: {1: 1.12, 2: 1.29, 3: 1.48, 4: 1.71, 5: 2.00, 6: 2.35, 7: 2.79, 8: 3.35, 9: 4.07, 10: 5.00, 11: 6.26, 12: 7.96, 13: 10.35, 14: 13.80, 15: 18.97, 16: 27.11, 17: 40.66, 18: 65.06, 19: 113.85, 20: 227.70, 21: 596.25, 22: 2277.0},
-    4: {1: 1.18, 2: 1.41, 3: 1.71, 4: 2.09, 5: 2.58, 6: 3.23, 7: 4.09, 8: 5.26, 9: 6.88, 10: 9.17, 11: 12.51, 12: 17.52, 13: 25.30, 14: 37.95, 15: 59.64, 16: 99.39, 17: 178.91, 18: 357.81, 19: 834.90, 20: 2504.70, 21: 12523.50},
-    5: {1: 1.24, 2: 1.56, 3: 2.00, 4: 2.58, 5: 3.39, 6: 4.52, 7: 6.14, 8: 8.50, 9: 12.04, 10: 17.52, 11: 26.27, 12: 40.87, 13: 66.41, 14: 113.85, 15: 208.72, 16: 417.45, 17: 939.26, 18: 2504.70, 19: 8766.45, 20: 52598.70},
-    # Add rest of existing table...
+    2: {1: 1.06, 2: 1.15, 3: 1.26, 4: 1.38, 5: 1.53, 6: 1.71, 7: 1.9, 8: 2.14, 9: 2.42, 10: 2.77, 11: 3.19, 12: 3.73, 13: 4.41, 14: 5.29, 15: 6.47, 16: 8.08, 17: 10.4, 18: 13.86, 19: 19.4, 20: 29.11, 21: 48.51, 22: 97.02, 23: 291.06},
+    # 3 Bombs
+    3: {1: 1.1, 2: 1.26, 3: 1.45, 4: 1.68, 5: 1.96, 6: 2.3, 7: 2.73, 8: 3.28, 9: 3.99, 10: 4.9, 11: 6.13, 12: 7.8, 13: 10.14, 14: 13.52, 15: 18.59, 16: 26.57, 17: 39.85, 18: 63.76, 19: 111.57, 20: 223.15, 21: 584.33, 22: 2231.46},
+    # 4 Bombs
+    4: {1: 1.16, 2: 1.38, 3: 1.68, 4: 2.05, 5: 2.53, 6: 3.17, 7: 4.01, 8: 5.15, 9: 6.74, 10: 8.99, 11: 12.26, 12: 17.17, 13: 24.79, 14: 37.19, 15: 58.45, 16: 97.4, 17: 175.33, 18: 350.65, 19: 818.2, 20: 2454.61, 21: 12273.03},
+    # 5 Bombs
+    5: {1: 1.22, 2: 1.53, 3: 1.96, 4: 2.53, 5: 3.32, 6: 4.43, 7: 6.02, 8: 8.33, 9: 11.8, 10: 17.17, 11: 25.74, 12: 40.05, 13: 65.08, 14: 111.57, 15: 204.55, 16: 409.1, 17: 920.47, 18: 2454.61, 19: 8591.12, 20: 51546.73},
     # 6 Bombs
-    6: {1: 1.30, 2: 1.74, 3: 2.35, 4: 3.23, 5: 4.52, 6: 6.46, 7: 9.44, 8: 14.17, 9: 21.89, 10: 35.03, 11: 58.38, 12: 102.17, 13: 189.75, 14: 379.50, 15: 834.90, 16: 2087.25, 17: 6261.75, 18: 25047.0, 19: 175329.0},
+    6: {1: 1.27, 2: 1.71, 3: 2.3, 4: 3.17, 5: 4.43, 6: 6.33, 7: 9.25, 8: 13.89, 9: 21.45, 10: 34.33, 11: 57.21, 12: 100.13, 13: 185.95, 14: 371.91, 15: 818.2, 16: 2045.5, 17: 6136.52, 18: 24546.06, 19: 171822.42},
     # 7 Bombs
-    7: {1: 1.37, 2: 1.94, 3: 2.79, 4: 4.09, 5: 6.14, 6: 9.44, 7: 14.95, 8: 24.47, 9: 41.60, 10: 73.95, 11: 138.66, 12: 277.33, 13: 600.87, 14: 1442.10, 15: 3965.77, 16: 13219.25, 17: 59486.62, 18: 475893.0},
+    7: {1: 1.34, 2: 1.9, 3: 2.73, 4: 4.01, 5: 6.02, 6: 9.25, 7: 14.65, 8: 23.98, 9: 40.77, 10: 72.47, 11: 135.89, 12: 271.78, 13: 588.85, 14: 1413.26, 15: 3886.45, 16: 12954.86, 17: 58296.89, 18: 466375.14},
     # 8 Bombs
-    8: {1: 1.46, 2: 2.18, 3: 3.35, 4: 5.26, 5: 8.50, 6: 14.17, 7: 24.47, 8: 44.05, 9: 83.20, 10: 166.40, 11: 356.56, 12: 831.98, 13: 2163.15, 14: 6489.45, 15: 23794.65, 16: 118973.25, 17: 1070759.25},
+    8: {1: 1.43, 2: 2.14, 3: 3.28, 4: 5.15, 5: 8.33, 6: 13.89, 7: 23.98, 8: 43.17, 9: 81.54, 10: 163.07, 11: 349.43, 12: 815.34, 13: 2119.89, 14: 6359.66, 15: 23318.76, 16: 116593.79, 17: 1049344.06},
     # 9 Bombs
-    9: {1: 1.55, 2: 2.47, 3: 4.07, 4: 6.88, 5: 12.04, 6: 21.89, 7: 41.60, 8: 83.20, 9: 176.80, 10: 404.10, 11: 1010.26, 12: 2828.73, 13: 9193.39, 14: 36773.55, 15: 202254.52, 16: 2022545.25},
+    9: {1: 1.52, 2: 2.42, 3: 3.99, 4: 6.74, 5: 11.8, 6: 21.45, 7: 40.77, 8: 81.54, 9: 173.26, 10: 396.02, 11: 990.05, 12: 2772.16, 13: 9009.52, 14: 36038.08, 15: 198209.43, 16: 1982094.34},
     # 10 Bombs
-    10: {1: 1.65, 2: 2.83, 3: 5.00, 4: 9.17, 5: 17.52, 6: 35.03, 7: 73.95, 8: 166.40, 9: 404.10, 10: 1077.61, 11: 3232.84, 12: 11314.94, 13: 49301.40, 14: 294188.40, 15: 3236072.40},
+    10: {1: 1.62, 2: 2.77, 3: 4.9, 4: 8.99, 5: 17.17, 6: 34.33, 7: 72.47, 8: 163.07, 9: 396.02, 10: 1056.06, 11: 3168.18, 12: 11088.64, 13: 48315.37, 14: 288304.63, 15: 3171350.95},
     # 11 Bombs
-    11: {1: 1.77, 2: 3.26, 3: 6.26, 4: 12.51, 5: 26.27, 6: 58.38, 7: 138.66, 8: 356.56, 9: 1010.26, 10: 3232.84, 11: 12123.15, 12: 56574.69, 13: 367735.50, 14: 4412826.0},
+    11: {1: 1.73, 2: 3.19, 3: 6.13, 4: 12.26, 5: 25.74, 6: 57.21, 7: 135.89, 8: 349.43, 9: 990.05, 10: 3168.18, 11: 11880.69, 12: 55443.2, 13: 360380.79, 14: 4324569.48},
     # 12 Bombs
-    12: {1: 1.90, 2: 3.81, 3: 7.96, 4: 17.52, 5: 40.87, 6: 102.17, 7: 277.33, 8: 831.98, 9: 2828.73, 10: 11314.94, 11: 56574.69, 12: 396022.85, 13: 5148297.0},
+    12: {1: 1.86, 2: 3.73, 3: 7.8, 4: 17.17, 5: 40.05, 6: 100.13, 7: 271.78, 8: 815.34, 9: 2772.16, 10: 11088.64, 11: 55443.2, 12: 388102.39, 13: 5045331.06},
     # 13 Bombs
-    13: {1: 2.06, 2: 4.50, 3: 10.35, 4: 25.30, 5: 66.41, 6: 189.75, 7: 600.87, 8: 2163.15, 9: 9193.39, 10: 49301.40, 11: 367735.50, 12: 5148297.0},
+    13: {1: 2.02, 2: 4.41, 3: 10.14, 4: 24.79, 5: 65.08, 6: 185.95, 7: 588.85, 8: 2119.89, 9: 9009.52, 10: 48315.37, 11: 360380.79, 12: 5045331.06},
     # 14 Bombs
-    14: {1: 2.25, 2: 5.40, 3: 13.80, 4: 37.95, 5: 113.85, 6: 379.50, 7: 1442.10, 8: 6489.45, 9: 36773.55, 10: 294188.40, 11: 4412826.0},
+    14: {1: 2.21, 2: 5.29, 3: 13.52, 4: 37.19, 5: 111.57, 6: 371.91, 7: 1413.26, 8: 6359.66, 9: 36038.08, 10: 288304.63, 11: 4324569.48},
     # 15 Bombs
-    15: {1: 2.47, 2: 6.60, 3: 18.97, 4: 59.64, 5: 208.72, 6: 834.90, 7: 3965.77, 8: 23794.65, 9: 202254.52, 10: 3236072.40},
+    15: {1: 2.42, 2: 6.47, 3: 18.59, 4: 58.45, 5: 204.55, 6: 818.2, 7: 3886.45, 8: 23318.76, 9: 198209.43, 10: 3171350.95},
     # 16 Bombs
-    16: {1: 2.75, 2: 8.25, 3: 27.11, 4: 99.39, 5: 417.45, 6: 2087.25, 7: 13219.25, 8: 118973.25, 9: 2022545.25},
+    16: {1: 2.69, 2: 8.08, 3: 26.57, 4: 97.4, 5: 409.1, 6: 2045.5, 7: 12954.86, 8: 116593.79, 9: 1982094.34},
     # 17 Bombs
-    17: {1: 3.09, 2: 10.61, 3: 40.66, 4: 178.91, 5: 939.26, 6: 6261.75, 7: 59486.62, 8: 1070759.25},
+    17: {1: 3.03, 2: 10.4, 3: 39.85, 4: 175.33, 5: 920.47, 6: 6136.52, 7: 58296.89, 8: 1049344.06},
     # 18 Bombs
-    18: {1: 3.54, 2: 14.14, 3: 65.06, 4: 357.81, 5: 2504.70, 6: 25047.0, 7: 475893.0},
+    18: {1: 3.47, 2: 13.86, 3: 63.76, 4: 350.65, 5: 2454.61, 6: 24546.06, 7: 466375.14},
     # 19 Bombs
-    19: {1: 4.12, 2: 19.80, 3: 113.85, 4: 834.90, 5: 8766.45, 6: 175329.0},
+    19: {1: 4.04, 2: 19.4, 3: 111.57, 4: 818.2, 5: 8591.12, 6: 171822.42},
     # 20 Bombs
-    20: {1: 4.95, 2: 29.70, 3: 227.70, 4: 2504.70, 5: 52598.70},
+    20: {1: 4.85, 2: 29.11, 3: 223.15, 4: 2454.61, 5: 51546.73},
     # 21 Bombs
-    21: {1: 6.19, 2: 49.50, 3: 569.25, 4: 12523.50},
+    21: {1: 6.07, 2: 48.51, 3: 557.87, 4: 12273.03},
     # 22 Bombs
-    22: {1: 8.25, 2: 99.00, 3: 2277.00},
+    22: {1: 8.08, 2: 97.02, 3: 2231.46},
     # 23 Bombs
-    23: {1: 12.37, 2: 297.00},
+    23: {1: 12.12, 2: 291.06},
     # 24 Bombs
-    24: {1: 24.75}
+    24: {1: 24.25}
 }
 
 # --- KENO PAYOUT TABLE ---
@@ -406,7 +407,7 @@ def get_limbo_multiplier(server_seed, client_seed, nonce):
     """
     Generate a provably fair Limbo multiplier using inverse exponential distribution.
     Returns a multiplier between 1.00 and 1000.00.
-    The chance of getting 2x is 48%, 4x is 24%, etc.
+    The chance of getting 2x is ~46%, 4x is ~23%, etc. (3% house edge)
     """
     hash_result = create_hash(server_seed, client_seed, nonce)
     # Use first 13 hex characters for better precision
@@ -415,10 +416,10 @@ def get_limbo_multiplier(server_seed, client_seed, nonce):
     max_val = 16 ** 13
     normalized = hex_value / max_val
     
-    # Use inverse exponential: multiplier = 0.99 / (1 - normalized)
-    # This creates the desired probability distribution
+    # Use inverse exponential: multiplier = 0.97 / (1 - normalized)
+    # This creates the desired probability distribution with 3% house edge
     # Clamp between 1.00 and 1000.00
-    house_edge = 0.01  # 1% house edge
+    house_edge = 0.03  # 3% house edge
     try:
         result = (1 - house_edge) / normalized if normalized > 0 else 1000.00
         result = max(1.00, min(1000.00, result))
@@ -1921,10 +1922,11 @@ async def blackjack_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 parse_mode=ParseMode.HTML
             )
         else:
-            winnings_usd = bet_amount_usd * 2.5
-            winnings_currency = bet_amount_currency * 2.5
+            # Blackjack pays 2.425x (3% house edge)
+            winnings_usd = bet_amount_usd * 2.425
+            winnings_currency = bet_amount_currency * 2.425
             user_wallets[user.id] += winnings_usd
-            update_stats_on_bet(user.id, game_id, bet_amount_usd, True, multiplier=2.5, context=context)
+            update_stats_on_bet(user.id, game_id, bet_amount_usd, True, multiplier=2.425, context=context)
             update_pnl(user.id)
             save_user_data(user.id)
             await update.message.reply_text(
@@ -2087,21 +2089,23 @@ async def handle_dealer_turn(query, context, game_id):
     double_text = " - Doubled Down" if game["doubled"] else ""
 
     if dealer_value > 21:
-        winnings = game["bet_amount"] * 2
+        # Regular win pays 1.94x (3% house edge)
+        winnings = game["bet_amount"] * 1.94
         user_wallets[user_id] += winnings
         result = f"🎉 Dealer busts! You win ${winnings:.2f}!"
         game['win'] = True
-        update_stats_on_bet(user_id, game_id, original_bet, True, multiplier=2, context=context)
+        update_stats_on_bet(user_id, game_id, original_bet, True, multiplier=1.94, context=context)
     elif dealer_value > player_value:
         result = f"😢 Dealer wins with {dealer_value}. You lose ${game['bet_amount']:.2f}"
         game['win'] = False
         update_stats_on_bet(user_id, game_id, original_bet, False, context=context)
     elif player_value > dealer_value:
-        winnings = game["bet_amount"] * 2
+        # Regular win pays 1.94x (3% house edge)
+        winnings = game["bet_amount"] * 1.94
         user_wallets[user_id] += winnings
         result = f"🎉 You win! ${winnings:.2f}"
         game['win'] = True
-        update_stats_on_bet(user_id, game_id, original_bet, True, multiplier=2, context=context)
+        update_stats_on_bet(user_id, game_id, original_bet, True, multiplier=1.94, context=context)
     else:
         user_wallets[user_id] += game["bet_amount"]
         result = "🤝 Push! Bet returned."
@@ -2173,7 +2177,7 @@ async def coin_flip_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     ]
     await update.message.reply_text(
         f"🪙 <b>Coin Flip Started!</b> (ID: <code>{game_id}</code>)\n\n💰 Bet: ${bet:.2f}\nChoose Heads or Tails!\n\n"
-        f"🎯 Current Multiplier: 2x",
+        f"🎯 Current Multiplier: 1.94x",
         parse_mode=ParseMode.HTML,
         reply_markup=InlineKeyboardMarkup(keyboard)
     )
@@ -2210,8 +2214,11 @@ async def coin_flip_callback(update: Update, context: ContextTypes.DEFAULT_TYPE)
 
         if pick == bot_choice:
             game["streak"] += 1
-            multiplier = 2 ** game["streak"]
+            # Changed multiplier progression to maintain house edge
+            # 1.94x on first win, 3.88x on second, 7.76x on third, etc.
+            multiplier = 1.94 * (2 ** (game["streak"] - 1))
             win_amount = game["bet_amount"] * multiplier
+            next_multiplier = 1.94 * (2 ** game["streak"])
             keyboard = [
                 [InlineKeyboardButton("🪙 Heads", callback_data=f"flip_pick_{game_id}_Heads"),
                  InlineKeyboardButton("🪙 Tails", callback_data=f"flip_pick_{game_id}_Tails")],
@@ -2220,7 +2227,7 @@ async def coin_flip_callback(update: Update, context: ContextTypes.DEFAULT_TYPE)
             await query.edit_message_text(
                 f"🎉 <b>Correct!</b> The coin landed on {pick}!\n\n"
                 f"💰 Current Win: <b>${win_amount:.2f}</b>\n🔥 Streak: {game['streak']}\n"
-                f"🎯 Next Multiplier: {multiplier * 2}x\n\nContinue playing or cash out?\nID: <code>{game_id}</code>",
+                f"🎯 Next Multiplier: {next_multiplier:.2f}x\n\nContinue playing or cash out?\nID: <code>{game_id}</code>",
                 parse_mode=ParseMode.HTML,
                 reply_markup=InlineKeyboardMarkup(keyboard)
             )
@@ -2238,7 +2245,9 @@ async def coin_flip_callback(update: Update, context: ContextTypes.DEFAULT_TYPE)
             # del game_sessions[game_id] # FIX: Don't delete history
 
     elif action == "cashout":
-        multiplier = 2 ** game["streak"]
+        # Changed multiplier progression to maintain house edge
+        # 1.94x on first win, 3.88x on second, 7.76x on third, etc.
+        multiplier = 1.94 * (2 ** (game["streak"] - 1))
         win_amount = game["bet_amount"] * multiplier
         user_wallets[user.id] += win_amount
         game["status"] = 'completed'
@@ -2249,7 +2258,7 @@ async def coin_flip_callback(update: Update, context: ContextTypes.DEFAULT_TYPE)
         save_user_data(user.id)
         await query.edit_message_text(
             f"💸 <b>Cashed Out!</b>\n\n🎉 You won <b>${win_amount:.2f}</b>!\n"
-            f"🔥 Final streak: {game['streak']}\n📈 Final multiplier: {multiplier}x\nID: <code>{game_id}</code>",
+            f"🔥 Final streak: {game['streak']}\n📈 Final multiplier: {multiplier:.2f}x\nID: <code>{game_id}</code>",
             parse_mode=ParseMode.HTML
         )
         # del game_sessions[game_id] # FIX: Don't delete history
@@ -2294,10 +2303,16 @@ def calculate_highlow_multiplier(current_card: int, deck: list, bet_type: str) -
         # Count cards with rank higher than current
         higher_cards = sum(count for rank, count in rank_counts.items() if rank > current_card)
         probability = higher_cards / total_remaining if total_remaining > 0 else 0
+        # Exception: For King (13), set multiplier to 1.02x since there are no higher cards
+        if current_card == 13:
+            return 1.02
     elif bet_type == "low":
         # Count cards with rank lower than current
         lower_cards = sum(count for rank, count in rank_counts.items() if rank < current_card)
         probability = lower_cards / total_remaining if total_remaining > 0 else 0
+        # Exception: For Ace (1), set multiplier to 1.02x since there are no lower cards
+        if current_card == 1:
+            return 1.02
     elif bet_type == "tie":
         # Count cards with same rank as current
         same_cards = rank_counts.get(current_card, 0)
@@ -2307,7 +2322,7 @@ def calculate_highlow_multiplier(current_card: int, deck: list, bet_type: str) -
     
     # Avoid division by zero
     if probability <= 0:
-        return 0  # Can't win, no multiplier
+        return 1.02  # Return minimum multiplier instead of 0
     
     # Calculate multiplier with 2% house edge
     multiplier = 0.98 / probability
@@ -2400,8 +2415,7 @@ async def highlow_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         f"Choose your prediction:\n"
         f"⬆️ Higher: {high_mult:.2f}x\n"
         f"⬇️ Lower: {low_mult:.2f}x\n"
-        f"🔄 Tie: {tie_mult:.2f}x\n\n"
-        f"💡 Multiplier = 0.98 / Probability (2% house edge)",
+        f"🔄 Tie: {tie_mult:.2f}x",
         parse_mode=ParseMode.HTML,
         reply_markup=InlineKeyboardMarkup(keyboard)
     )
@@ -3262,8 +3276,8 @@ async def limbo_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "• If outcome ≥ your target: You win (bet × target)\n"
             "• If outcome < your target: You lose\n\n"
             "<b>Probability:</b>\n"
-            "• 2x = ~48% chance\n"
-            "• 4x = ~24% chance\n"
+            "• 2x = ~46% chance\n"
+            "• 4x = ~23% chance\n"
             "• Higher multipliers = lower chance\n\n"
             "<b>Usage:</b> <code>/lb amount multiplier</code>\n\n"
             "<b>Examples:</b>\n"
