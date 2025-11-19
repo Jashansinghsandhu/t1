@@ -2256,12 +2256,63 @@ async def coin_flip_callback(update: Update, context: ContextTypes.DEFAULT_TYPE)
 
 # 2B. HIGH-LOW CARD GAME
 # High-Low multiplier table based on probability
-HIGH_LOW_MULTIPLIERS = {
-    # Based on cards remaining and probability
-    "high": {1: 1.1, 2: 1.15, 3: 1.2, 4: 1.3, 5: 1.4, 6: 1.5, 7: 1.65, 8: 1.8, 9: 2.0, 10: 2.3},
-    "low": {1: 1.1, 2: 1.15, 3: 1.2, 4: 1.3, 5: 1.4, 6: 1.5, 7: 1.65, 8: 1.8, 9: 2.0, 10: 2.3},
-    "skip": {1: 1.05, 2: 1.08, 3: 1.1, 4: 1.12, 5: 1.15, 6: 1.18, 7: 1.2, 8: 1.23, 9: 1.25, 10: 1.28}
+# Card emoji mapping
+CARD_EMOJIS = {
+    1: "🂡",   # Ace of Spades
+    2: "🂢",   # 2 of Spades
+    3: "🂣",   # 3 of Spades
+    4: "🂤",   # 4 of Spades
+    5: "🂥",   # 5 of Spades
+    6: "🂦",   # 6 of Spades
+    7: "🂧",   # 7 of Spades
+    8: "🂨",   # 8 of Spades
+    9: "🂩",   # 9 of Spades
+    10: "🂪",  # 10 of Spades
+    11: "🂫",  # Jack of Spades
+    12: "🂭",  # Queen of Spades
+    13: "🂮",  # King of Spades
 }
+
+def calculate_highlow_multiplier(current_card: int, deck: list, bet_type: str) -> float:
+    """
+    Calculate multiplier based on probability according to hl.txt specifications.
+    Formula: Multiplier = 0.98 / P(Bet)
+    House edge is 2%, meaning 98% RTP
+    """
+    if not deck:
+        return 1.0
+    
+    total_remaining = len(deck)
+    
+    # Count remaining cards by rank
+    rank_counts = {}
+    for card in deck:
+        rank_counts[card] = rank_counts.get(card, 0) + 1
+    
+    # Calculate probabilities
+    if bet_type == "high":
+        # Count cards with rank higher than current
+        higher_cards = sum(count for rank, count in rank_counts.items() if rank > current_card)
+        probability = higher_cards / total_remaining if total_remaining > 0 else 0
+    elif bet_type == "low":
+        # Count cards with rank lower than current
+        lower_cards = sum(count for rank, count in rank_counts.items() if rank < current_card)
+        probability = lower_cards / total_remaining if total_remaining > 0 else 0
+    elif bet_type == "tie":
+        # Count cards with same rank as current
+        same_cards = rank_counts.get(current_card, 0)
+        probability = same_cards / total_remaining if total_remaining > 0 else 0
+    else:
+        return 1.0
+    
+    # Avoid division by zero
+    if probability <= 0:
+        return 0  # Can't win, no multiplier
+    
+    # Calculate multiplier with 2% house edge
+    multiplier = 0.98 / probability
+    
+    return round(multiplier, 2)
 
 @check_maintenance
 async def highlow_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -2329,29 +2380,45 @@ async def highlow_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     save_user_data(user.id)
     
     card_name = get_card_name(current_card)
+    
+    # Calculate multipliers for each choice
+    high_mult = calculate_highlow_multiplier(current_card, deck, "high")
+    low_mult = calculate_highlow_multiplier(current_card, deck, "low")
+    tie_mult = calculate_highlow_multiplier(current_card, deck, "tie")
+    
     keyboard = [
-        [InlineKeyboardButton("⬆️ Higher", callback_data=f"hl_pick_{game_id}_high"),
-         InlineKeyboardButton("⬇️ Lower", callback_data=f"hl_pick_{game_id}_low"),
-         InlineKeyboardButton("⏭️ Skip", callback_data=f"hl_pick_{game_id}_skip")]
+        [InlineKeyboardButton(f"⬆️ Higher ({high_mult:.2f}x)", callback_data=f"hl_pick_{game_id}_high"),
+         InlineKeyboardButton(f"⬇️ Lower ({low_mult:.2f}x)", callback_data=f"hl_pick_{game_id}_low"),
+         InlineKeyboardButton(f"🔄 Tie ({tie_mult:.2f}x)", callback_data=f"hl_pick_{game_id}_tie")]
     ]
     
     await update.message.reply_text(
         f"🎴 <b>High-Low Game Started!</b> (ID: <code>{game_id}</code>)\n\n"
         f"💰 Bet: ${bet:.2f}\n"
-        f"🃏 Current Card: <b>{card_name}</b>\n\n"
-        f"Will the next card be Higher, Lower, or Skip?\n"
-        f"🎯 Current Multiplier: 1.0x",
+        f"🃏 Current Card: <b>{card_name}</b>\n"
+        f"📊 Cards remaining: {len(deck)}\n\n"
+        f"Choose your prediction:\n"
+        f"⬆️ Higher: {high_mult:.2f}x\n"
+        f"⬇️ Lower: {low_mult:.2f}x\n"
+        f"🔄 Tie: {tie_mult:.2f}x\n\n"
+        f"💡 Multiplier = 0.98 / Probability (2% house edge)",
         parse_mode=ParseMode.HTML,
         reply_markup=InlineKeyboardMarkup(keyboard)
     )
 
-def get_card_name(card_value):
-    """Convert card value to name"""
+def get_card_name(card_value, with_emoji=True):
+    """Convert card value to name, optionally with emoji"""
     card_names = {
         1: "Ace (A)", 2: "2", 3: "3", 4: "4", 5: "5", 6: "6", 7: "7",
         8: "8", 9: "9", 10: "10", 11: "Jack (J)", 12: "Queen (Q)", 13: "King (K)"
     }
-    return card_names.get(card_value, str(card_value))
+    name = card_names.get(card_value, str(card_value))
+    
+    if with_emoji and card_value in CARD_EMOJIS:
+        emoji = CARD_EMOJIS[card_value]
+        return f"{name} {emoji}"
+    
+    return name
 
 @check_maintenance
 async def highlow_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -2380,64 +2447,46 @@ async def highlow_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
     
     if action == "pick":
-        choice = parts[3]  # high, low, or skip
+        choice = parts[3]  # high, low, or tie
         current_card = game["current_card"]
         
         if not game["deck"]:
             # Deck exhausted - auto cashout
             action = "cashout"
         else:
-            # Handle skip: just move to next card without losing
-            if choice == "skip":
-                next_card = game["deck"].pop()
-                game["current_card"] = next_card
-                
-                card_name = get_card_name(next_card)
-                win_amount = game["bet_amount"] * game["current_multiplier"]
-                keyboard = [
-                    [InlineKeyboardButton("⬆️ Higher", callback_data=f"hl_pick_{game_id}_high"),
-                     InlineKeyboardButton("⬇️ Lower", callback_data=f"hl_pick_{game_id}_low"),
-                     InlineKeyboardButton("⏭️ Skip", callback_data=f"hl_pick_{game_id}_skip")],
-                    [InlineKeyboardButton(f"💸 Cash Out (${win_amount:.2f})", callback_data=f"hl_cashout_{game_id}")]
-                ]
-                
-                await query.edit_message_text(
-                    f"⏭️ <b>Card Skipped!</b>\n\n"
-                    f"🃏 New Current Card: <b>{card_name}</b>\n"
-                    f"💰 Current Win: <b>${win_amount:.2f}</b>\n"
-                    f"🔥 Streak: {game['streak']}\n"
-                    f"📈 Current Multiplier: {game['current_multiplier']:.2f}x\n\n"
-                    f"Cards remaining: {len(game['deck'])}\n"
-                    f"Continue playing or cash out?\nID: <code>{game_id}</code>",
-                    parse_mode=ParseMode.HTML,
-                    reply_markup=InlineKeyboardMarkup(keyboard)
-                )
-                return
-            
             next_card = game["deck"].pop()
             
-            # Determine if choice was correct (only for high/low)
+            # Calculate the multiplier for this choice BEFORE the draw
+            choice_multiplier = calculate_highlow_multiplier(current_card, game["deck"] + [next_card], choice)
+            
+            # Determine if choice was correct
             correct = False
             if choice == "high" and next_card > current_card:
                 correct = True
             elif choice == "low" and next_card < current_card:
                 correct = True
+            elif choice == "tie" and next_card == current_card:
+                correct = True
             
             if correct:
                 game["streak"] += 1
-                # Calculate multiplier based on streak and choice type
-                streak_level = min(game["streak"], 10)
-                multiplier_increment = HIGH_LOW_MULTIPLIERS[choice][streak_level]
-                game["current_multiplier"] *= multiplier_increment
+                # Apply the multiplier for this win
+                game["current_multiplier"] *= choice_multiplier
                 
                 win_amount = game["bet_amount"] * game["current_multiplier"]
                 game["current_card"] = next_card
                 
                 card_name = get_card_name(next_card)
+                
+                # Calculate new multipliers for next round
+                high_mult = calculate_highlow_multiplier(next_card, game["deck"], "high")
+                low_mult = calculate_highlow_multiplier(next_card, game["deck"], "low")
+                tie_mult = calculate_highlow_multiplier(next_card, game["deck"], "tie")
+                
                 keyboard = [
-                    [InlineKeyboardButton("⬆️ Higher", callback_data=f"hl_pick_{game_id}_high"),
-                     InlineKeyboardButton("⬇️ Lower", callback_data=f"hl_pick_{game_id}_low"),
-                     InlineKeyboardButton("⏭️ Skip", callback_data=f"hl_pick_{game_id}_skip")],
+                    [InlineKeyboardButton(f"⬆️ Higher ({high_mult:.2f}x)", callback_data=f"hl_pick_{game_id}_high"),
+                     InlineKeyboardButton(f"⬇️ Lower ({low_mult:.2f}x)", callback_data=f"hl_pick_{game_id}_low"),
+                     InlineKeyboardButton(f"🔄 Tie ({tie_mult:.2f}x)", callback_data=f"hl_pick_{game_id}_tie")],
                     [InlineKeyboardButton(f"💸 Cash Out (${win_amount:.2f})", callback_data=f"hl_cashout_{game_id}")]
                 ]
                 
@@ -2446,8 +2495,16 @@ async def highlow_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
                     f"🃏 Current Card: <b>{card_name}</b>\n"
                     f"💰 Current Win: <b>${win_amount:.2f}</b>\n"
                     f"🔥 Streak: {game['streak']}\n"
-                    f"📈 Current Multiplier: {game['current_multiplier']:.2f}x\n\n"
-                    f"Cards remaining: {len(game['deck'])}\n"
+                    f"📈 Current Total Multiplier: {game['current_multiplier']:.2f}x\n"
+                    f"📊 Cards remaining: {len(game['deck'])}\n\n"
+                    f"Next multipliers:\n"
+                    f"⬆️ Higher: {high_mult:.2f}x\n"
+                    f"⬇️ Lower: {low_mult:.2f}x\n"
+                    f"🔄 Tie: {tie_mult:.2f}x\n\n"
+                    f"Continue playing or cash out?\nID: <code>{game_id}</code>",
+                    parse_mode=ParseMode.HTML,
+                    reply_markup=InlineKeyboardMarkup(keyboard)
+                )
                     f"Continue playing or cash out?\nID: <code>{game_id}</code>",
                     parse_mode=ParseMode.HTML,
                     reply_markup=InlineKeyboardMarkup(keyboard)
@@ -2963,19 +3020,78 @@ async def slots_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         parse_mode=ParseMode.HTML
     )
 
-# --- Play vs Bot Menu: vertical and more attractive ---
+# --- Play vs Bot Menu: Show inline buttons directly ---
 @check_maintenance
 async def dice_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await generic_emoji_game_command(update, context, "dice")
+    user = update.effective_user
+    await ensure_user_in_wallets(user.id, user.username, context=context)
+    
+    keyboard = [
+        [InlineKeyboardButton(f"🤖 Play vs Bot", callback_data=f"pvb_start_dice_bot")],
+        [InlineKeyboardButton(f"👤 Play vs Player", callback_data=f"pvp_info_dice_bot")],
+        [InlineKeyboardButton("🔙 Back to Games", callback_data="main_games")]
+    ]
+    
+    await update.message.reply_text(
+        f"🎲 <b>Dice</b>\n\n"
+        "Who do you want to play against?",
+        parse_mode=ParseMode.HTML,
+        reply_markup=InlineKeyboardMarkup(keyboard)
+    )
+
 @check_maintenance
 async def darts_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await generic_emoji_game_command(update, context, "darts")
+    user = update.effective_user
+    await ensure_user_in_wallets(user.id, user.username, context=context)
+    
+    keyboard = [
+        [InlineKeyboardButton(f"🤖 Play vs Bot", callback_data=f"pvb_start_darts")],
+        [InlineKeyboardButton(f"👤 Play vs Player", callback_data=f"pvp_info_darts")],
+        [InlineKeyboardButton("🔙 Back to Games", callback_data="main_games")]
+    ]
+    
+    await update.message.reply_text(
+        f"🎯 <b>Darts</b>\n\n"
+        "Who do you want to play against?",
+        parse_mode=ParseMode.HTML,
+        reply_markup=InlineKeyboardMarkup(keyboard)
+    )
+
 @check_maintenance
 async def football_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await generic_emoji_game_command(update, context, "goal")
+    user = update.effective_user
+    await ensure_user_in_wallets(user.id, user.username, context=context)
+    
+    keyboard = [
+        [InlineKeyboardButton(f"🤖 Play vs Bot", callback_data=f"pvb_start_football")],
+        [InlineKeyboardButton(f"👤 Play vs Player", callback_data=f"pvp_info_football")],
+        [InlineKeyboardButton("🔙 Back to Games", callback_data="main_games")]
+    ]
+    
+    await update.message.reply_text(
+        f"⚽ <b>Football</b>\n\n"
+        "Who do you want to play against?",
+        parse_mode=ParseMode.HTML,
+        reply_markup=InlineKeyboardMarkup(keyboard)
+    )
+
 @check_maintenance
 async def bowling_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await generic_emoji_game_command(update, context, "bowl")
+    user = update.effective_user
+    await ensure_user_in_wallets(user.id, user.username, context=context)
+    
+    keyboard = [
+        [InlineKeyboardButton(f"🤖 Play vs Bot", callback_data=f"pvb_start_bowling")],
+        [InlineKeyboardButton(f"👤 Play vs Player", callback_data=f"pvp_info_bowling")],
+        [InlineKeyboardButton("🔙 Back to Games", callback_data="main_games")]
+    ]
+    
+    await update.message.reply_text(
+        f"🎳 <b>Bowling</b>\n\n"
+        "Who do you want to play against?",
+        parse_mode=ParseMode.HTML,
+        reply_markup=InlineKeyboardMarkup(keyboard)
+    )
 
 # --- Play vs Bot main logic (bot rolls real emoji) ---
 async def play_vs_bot_game(update: Update, context: ContextTypes.DEFAULT_TYPE, game_type: str, target_score: int):
@@ -2995,9 +3111,18 @@ async def play_vs_bot_game(update: Update, context: ContextTypes.DEFAULT_TYPE, g
     save_user_data(user.id)
 
     game_id = generate_unique_id("PVB")
-    emoji_map = {"dice":"🎲", "darts":"🎯", "goal":"⚽", "bowl":"🎳"}
+    # Handle different game_type naming variations
+    emoji_map = {
+        "dice": "🎲", "dice_bot": "🎲",
+        "darts": "🎯",
+        "goal": "⚽", "football": "⚽",
+        "bowl": "🎳", "bowling": "🎳"
+    }
     
     mode_text = "Highest total score wins" if game_mode == "normal" else "Lowest total score wins"
+    
+    # Get the emoji for this game type
+    emoji = emoji_map.get(game_type, "🎲")  # Default to dice if not found
 
     await update.message.reply_text(
         f"🎮 {game_type.capitalize()} vs Bot started! (ID: <code>{game_id}</code>)\n"
@@ -3013,7 +3138,7 @@ async def play_vs_bot_game(update: Update, context: ContextTypes.DEFAULT_TYPE, g
     for i in range(game_rolls):
         await asyncio.sleep(1)  # Rate limit protection
         try:
-            bot_dice_msg = await context.bot.send_dice(chat_id=update.effective_chat.id, emoji=emoji_map[game_type])
+            bot_dice_msg = await context.bot.send_dice(chat_id=update.effective_chat.id, emoji=emoji)
             bot_rolls.append(bot_dice_msg.dice.value)
             await asyncio.sleep(4)  # Wait for animation to complete
         except Exception as e:
@@ -3028,7 +3153,7 @@ async def play_vs_bot_game(update: Update, context: ContextTypes.DEFAULT_TYPE, g
     rolls_text = " + ".join(str(r) for r in bot_rolls)
     await update.message.reply_text(
         f"Bot rolled: {rolls_text} = <b>{bot_total}</b>\n\n"
-        f"Now your turn! Send {game_rolls} {emoji_map[game_type]} emoji{'s' if game_rolls > 1 else ''} in this chat.",
+        f"Now your turn! Send {game_rolls} {emoji} emoji{'s' if game_rolls > 1 else ''} in this chat.",
         parse_mode=ParseMode.HTML
     )
 
@@ -5029,8 +5154,14 @@ async def message_listener(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if active_pvb_game_id and active_pvb_game_id in game_sessions:
         game = game_sessions[active_pvb_game_id]
         game_type = game['game_type'].replace("pvb_", "")
-        emoji_map = {"dice":"🎲", "darts":"🎯", "goal":"⚽", "bowl":"🎳"}
-        expected_emoji = emoji_map[game_type]
+        # Handle different game_type naming variations
+        emoji_map = {
+            "dice": "🎲", "dice_bot": "🎲",
+            "darts": "🎯",
+            "goal": "⚽", "football": "⚽",
+            "bowl": "🎳", "bowling": "🎳"
+        }
+        expected_emoji = emoji_map.get(game_type, "🎲")  # Default to dice if not found
         game_rolls = game.get('game_rolls', 1)
         game_mode = game.get('game_mode', 'normal')
 
