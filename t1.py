@@ -2505,10 +2505,6 @@ async def highlow_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
                     parse_mode=ParseMode.HTML,
                     reply_markup=InlineKeyboardMarkup(keyboard)
                 )
-                    f"Continue playing or cash out?\nID: <code>{game_id}</code>",
-                    parse_mode=ParseMode.HTML,
-                    reply_markup=InlineKeyboardMarkup(keyboard)
-                )
             else:
                 # Wrong guess - game over
                 game["status"] = 'completed'
